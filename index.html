@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECHO PROTOCOL ― 囚われた被験者</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ タイトル画面 ============ -->
+  <section id="screen-title" class="screen active">
+    <div class="title-card">
+      <p class="eyebrow">UNAUTHORIZED ACCESS DETECTED // 2-PLAYER ASYMMETRIC</p>
+      <h1>ECHO PROTOCOL<span class="subtitle">囚われた被験者</span></h1>
+      <p class="lead">
+        地下実験施設。自己学習型の管理AI「ORACLE」が暴走し、被験者を拘束した。<br>
+        外部からエンジニアが不正アクセスで介入する。<br>
+        ふたりの画面には、互いに欠けた情報だけが表示される。<br>
+        会話で情報を突き合わせ、15分以内にORACLEの拘束を解け。
+      </p>
+      <div class="room-gate" id="room-gate">
+        <label for="room-code-input" class="room-gate-label">合言葉（ルームコード）</label>
+        <div class="room-gate-row">
+          <input type="text" id="room-code-input" class="room-code-input" placeholder="例: ECHO-42" maxlength="24" autocomplete="off">
+          <button id="btn-room-join" class="btn btn-small" type="button">この合言葉で接続</button>
+        </div>
+        <p class="hint">※ 二人とも同じ合言葉を入力してください。事前に声を合わせて決めておきましょう。</p>
+      </div>
+
+      <p id="room-status" class="room-status" hidden></p>
+
+      <div class="role-buttons" id="role-buttons" hidden>
+        <button id="btn-role-subject" class="btn btn-subject" type="button">被験者として接続</button>
+        <button id="btn-role-operator" class="btn btn-operator" type="button">外部エンジニアとして侵入</button>
+      </div>
+      <button id="btn-reset-title" class="btn btn-ghost" type="button">セッションをリセット</button>
+      <p class="hint">※ 二人がそれぞれ別のパソコン・スマホでこのページを開き、同じ合言葉を入力すると、離れた場所からでも同期して遊べます。相手の画面は見せ合わず、会話だけで情報を伝え合ってください。</p>
+    </div>
+  </section>
+
+  <!-- ============ 被験者画面 ============ -->
+  <section id="screen-subject" class="screen">
+    <header class="hud hud-subject">
+      <div class="hud-left">
+        <span class="hud-tag">SUBJECT / CONTAINMENT-04</span>
+        <span id="subject-stage-label" class="hud-stage">STAGE 1 — 警告灯の記録</span>
+      </div>
+      <div class="hud-right">
+        <span class="timer-label">残り時間</span>
+        <span id="subject-timer" class="timer">15:00</span>
+      </div>
+    </header>
+
+    <div class="subject-layout">
+      <div class="room-scene" aria-hidden="true">
+        <div class="room-strobe" id="room-strobe"></div>
+        <div class="room-chair"></div>
+        <div class="room-monitor"><span class="room-monitor-text">ORACLE ONLINE</span></div>
+        <div class="room-pipes"></div>
+      </div>
+
+      <div class="device-column">
+
+        <!-- Stage1: 警告灯ログ + 消火器ラベル -->
+        <div class="device log-device" id="device-log">
+          <h2>警告灯の記録装置</h2>
+          <p class="device-desc">天井の警告灯が明滅した色を、順番に記録している。</p>
+          <div class="light-sequence">
+            <span class="light-chip light-purple">紫</span>
+            <span class="light-arrow">→</span>
+            <span class="light-chip light-amber">橙</span>
+            <span class="light-arrow">→</span>
+            <span class="light-chip light-white">白</span>
+            <span class="light-arrow">→</span>
+            <span class="light-chip light-purple">紫</span>
+          </div>
+          <div class="extinguisher-label">
+            <span class="extinguisher-tag">消火器 銘板</span>
+            <span class="extinguisher-text">UNIT No. <strong>5</strong> ／ COLOR CODE: <strong>ORANGE</strong></span>
+          </div>
+          <p class="device-desc small">※ この部屋の情報だけでは認証コードは分からない。外部エンジニアに記録内容を伝えよ。</p>
+        </div>
+
+        <!-- Stage2: バルブ操作 -->
+        <div class="device valve-device locked" id="device-valve">
+          <h2>隔壁バルブ制御</h2>
+          <p class="device-desc">4つのバルブがある。壁のメンテナンス記録に、作動順の一部が書かれている。</p>
+          <div class="wall-memo">
+            作動順序：◆ → <span class="memo-blank">？</span> → ▲ → ●
+          </div>
+          <div class="valve-buttons">
+            <button class="valve-btn" data-valve="triangle" type="button">▲</button>
+            <button class="valve-btn" data-valve="circle" type="button">●</button>
+            <button class="valve-btn" data-valve="diamond" type="button">◆</button>
+            <button class="valve-btn" data-valve="square" type="button">■</button>
+          </div>
+          <div class="input-history">
+            <span class="input-history-label">操作履歴:</span>
+            <span id="valve-history" class="input-history-values">（未操作）</span>
+          </div>
+          <p id="valve-message" class="device-message"></p>
+        </div>
+
+        <!-- Stage3: 最終認証 -->
+        <div class="device final-device locked" id="device-final">
+          <h2>非常口 最終認証パネル</h2>
+          <p class="device-desc">壁に走り書きがある：「送信された数字の各桁に 4 を足せ（10になったら 0）」</p>
+          <div class="final-input-row">
+            <input type="text" inputmode="numeric" maxlength="1" class="final-digit" data-idx="0">
+            <input type="text" inputmode="numeric" maxlength="1" class="final-digit" data-idx="1">
+            <input type="text" inputmode="numeric" maxlength="1" class="final-digit" data-idx="2">
+            <button id="final-submit" class="btn btn-small" type="button">認証</button>
+          </div>
+          <p id="final-message" class="device-message"></p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ オペレーター画面 ============ -->
+  <section id="screen-operator" class="screen">
+    <header class="hud hud-operator">
+      <div class="hud-left">
+        <span class="hud-tag">OPERATOR / REMOTE SHELL</span>
+        <span id="operator-stage-label" class="hud-stage">STAGE 1 — 警告灯の記録</span>
+      </div>
+      <div class="hud-right">
+        <span class="timer-label">残り時間</span>
+        <span id="operator-timer" class="timer">15:00</span>
+      </div>
+    </header>
+
+    <div class="operator-layout">
+      <div class="operator-panel status-panel">
+        <h2 class="panel-title">CONTAINMENT-04 :: STATUS</h2>
+        <ul class="status-list">
+          <li><span>色識別認証</span><span id="status-log" class="status-pill status-pending">UNSOLVED</span></li>
+          <li><span>隔壁バルブ</span><span id="status-valve" class="status-pill status-pending">UNSOLVED</span></li>
+          <li><span>最終認証</span><span id="status-final" class="status-pill status-pending">UNSOLVED</span></li>
+        </ul>
+      </div>
+
+      <!-- Stage1: ソースコード断片 + コード入力 -->
+      <div class="operator-panel code-panel" id="panel-stage1">
+        <h2 class="panel-title">// oracle_core.dump — COLOR_MAP (corrupted)</h2>
+        <pre class="code-block">const COLOR_MAP = {
+  purple: 2,
+  amber:  ???,   // packet lost — ask on-site unit
+  white:  8,
+};
+// NOTE: sequence order is observed on-site.
+// Concatenate mapped digits in order to form AUTH_CODE.</pre>
+        <div class="term-input-row">
+          <span class="term-prompt">AUTH_CODE&gt;</span>
+          <input type="text" inputmode="numeric" maxlength="4" id="stage1-input" class="term-input" placeholder="____">
+          <button id="stage1-submit" class="btn btn-small" type="button">EXECUTE</button>
+        </div>
+        <p id="stage1-message" class="device-message"></p>
+      </div>
+
+      <!-- Stage2: 依存関係グラフ -->
+      <div class="operator-panel graph-panel locked" id="panel-stage2">
+        <h2 class="panel-title">// dependency_graph.trace</h2>
+        <p class="device-desc">4つの制御ノード（◆■●▲）の依存関係を一部だけ復元できた。</p>
+        <div class="dep-line">検出された依存関係： <strong>■ は ◆ の直後に実行される</strong></div>
+        <p class="device-desc small">※ 他の順序情報は破損している。現場のメンテナンス記録と突き合わせよ。この情報は口頭で被験者に伝えること。</p>
+      </div>
+
+      <!-- Stage3: シード送信 -->
+      <div class="operator-panel seed-panel locked" id="panel-stage3">
+        <h2 class="panel-title">// final_handshake.exe</h2>
+        <p class="device-desc">シードを送信すると、20秒だけ現場に数値が表示される。必要なら何度でも再送信できる。</p>
+        <button id="seed-send" class="btn btn-operator-action" type="button">シード送信</button>
+        <div id="seed-display" class="seed-display seed-idle">SEED: ----</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ クリア画面 ============ -->
+  <section id="screen-clear" class="screen">
+    <div class="result-card result-clear">
+      <p class="eyebrow">CONTAINMENT BREACH SUCCESSFUL</p>
+      <h1>脱出成功</h1>
+      <p id="clear-time" class="result-time"></p>
+      <p class="result-copy">ふたりは、互いに欠けた情報をつなぎ合わせ、ORACLEの拘束から脱出した。</p>
+      <button id="btn-restart-clear" class="btn btn-subject" type="button">もう一度遊ぶ</button>
+    </div>
+  </section>
+
+  <!-- ============ ゲームオーバー画面 ============ -->
+  <section id="screen-gameover" class="screen">
+    <div class="result-card result-gameover">
+      <p class="eyebrow">CONNECTION TERMINATED</p>
+      <h1>ORACLEは、<br>ふたりの声を沈黙させた</h1>
+      <button id="btn-restart-gameover" class="btn btn-operator" type="button">もう一度遊ぶ</button>
+    </div>
+  </section>
+
+</div>
+<script src="firebase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
