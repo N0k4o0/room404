@@ -16,11 +16,12 @@
    =========================================================== */
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyBIeI0MI2hLjvIoImzYZCc1skxSq1rhVl8",
+  authDomain: "o04-13cc9.firebaseapp.com",
+  databaseURL: "https://o04-13cc9-default-rtdb.firebaseio.com",
+  projectId: "o04-13cc9",
+  storageBucket: "o04-13cc9.firebasestorage.app",
+  messagingSenderId: "458080098327",
+  appId: "1:458080098327:web:d9c0ee89af092cde8f6452",
+  measurementId: "G-NCGN89RCLH",
 };
